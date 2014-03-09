@@ -15,10 +15,9 @@ type Currency struct {
 }
 
 type Transaction struct {
-	Currency *Currency
-	Volume   float64
-	Origin   *Wallet
-	Target   *Wallet
+	Volume float64
+	Origin *Wallet
+	Target *Wallet
 }
 
 type Wallet struct {
@@ -41,12 +40,11 @@ func NewCurrency(name string) *Currency {
 	}
 }
 
-func NewTransaction(currency *Currency, volume float64, origin *Wallet, target *Wallet) *Transaction {
+func NewTransaction(volume float64, origin *Wallet, target *Wallet) *Transaction {
 	return &Transaction{
-		Currency: currency,
-		Volume:   volume,
-		Origin:   origin,
-		Target:   target,
+		Volume: volume,
+		Origin: origin,
+		Target: target,
 	}
 }
 
@@ -91,11 +89,15 @@ func (t *Transaction) Rollback() (bool, error) {
 
 func (t *Transaction) Commit() (bool, error) {
 	if t.Origin.Currency != t.Target.Currency {
-		return false, WrongCurrencyError(t.Origin.Currency, t.Target.Currency)
+		return false, WrongCurrencyError{
+			t.Origin.Currency,
+			t.Target.Currency,
+		}
 	}
 	state, err := t.Origin.Subtract(t.Volume)
 	if err != nil {
-		return false, err
+		return state, err
 	}
-
+	state, err = t.Target.Add(t.Volume)
+	return state, err
 }

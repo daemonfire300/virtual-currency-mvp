@@ -9,6 +9,13 @@ type WrongCurrencyError struct {
 	CurrencyB *Currency
 }
 
-func (e *WrongCurrencyError) Error() string {
+func (e WrongCurrencyError) Error() string {
 	return fmt.Sprintf("Currency of type %v missmatches Currency of type %v", e.CurrencyA, e.CurrencyB)
+}
+
+func NewWrongCurrencyError(currencyA *Currency, currencyB *Currency) error {
+	return &WrongCurrencyError{
+		currencyA,
+		currencyB,
+	}
 }
