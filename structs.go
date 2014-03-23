@@ -14,10 +14,22 @@ type Currency struct {
 	Name string
 }
 
+type ExchangeType struct {
+	Direction uint
+}
+
+type Exchange struct {
+	Type           *ExchangeType
+	Rate           float64
+	TargetCurrency *Currency
+	OriginCurrency *Currency
+}
+
 type Transaction struct {
 	Volume float64
 	Origin *Wallet
 	Target *Wallet
+	Done   bool
 }
 
 type Wallet struct {
@@ -45,6 +57,7 @@ func NewTransaction(volume float64, origin *Wallet, target *Wallet) *Transaction
 		Volume: volume,
 		Origin: origin,
 		Target: target,
+		Done:   false,
 	}
 }
 
@@ -54,6 +67,21 @@ func NewWallet(owner *User, volume float64, currency *Currency) *Wallet {
 		Currency: currency,
 		Volume:   volume,
 		Mutex:    &sync.Mutex{},
+	}
+}
+
+func NewExchange(volume float64, origin *Wallet, target *Wallet) *Exchange {
+	return &Exchange{
+		Volume: volume,
+		Origin: origin,
+		Target: target,
+		Done:   false,
+	}
+}
+
+func NewExchangeType(direction uint) *ExchangeType {
+	return &ExchangeType{
+		Direction: direction,
 	}
 }
 
@@ -83,12 +111,13 @@ func (w *Wallet) Add(volume float64) (bool, error) {
 	}
 }
 
-func (t *Transaction) Rollback() (bool, error) {
-	return true, nil
+func (t *Transaction) Rollback() error {
+	_, err := t.Origin.Add(t.Volume)
+	return err
 }
 
 func (t *Transaction) Commit() (bool, error) {
-	if t.Origin.Currency != t.Target.Currency {
+	if *t.Origin.Currency != *t.Target.Currency {
 		return false, WrongCurrencyError{
 			t.Origin.Currency,
 			t.Target.Currency,
@@ -99,5 +128,10 @@ func (t *Transaction) Commit() (bool, error) {
 		return state, err
 	}
 	state, err = t.Target.Add(t.Volume)
+	if err != nil {
+		return state, t.Rollback()
+	} else {
+		t.Done = true
+	}
 	return state, err
 }
