@@ -70,12 +70,12 @@ func NewWallet(owner *User, volume float64, currency *Currency) *Wallet {
 	}
 }
 
-func NewExchange(volume float64, origin *Wallet, target *Wallet) *Exchange {
+func NewExchange(exchangeType *ExchangeType, rate float64, targetCurrency *Currency, originCurrency *Currency) *Exchange {
 	return &Exchange{
-		Volume: volume,
-		Origin: origin,
-		Target: target,
-		Done:   false,
+		Type:           exchangeType,
+		Rate:           rate,
+		TargetCurrency: targetCurrency,
+		OriginCurrency: originCurrency,
 	}
 }
 
